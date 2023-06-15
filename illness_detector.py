@@ -25,14 +25,13 @@ with open('illnesses.txt', 'r') as illness_file:
 def diagnose(symptoms):
     # TODO: Define this function to diagnose illnesses based on symptoms
 
-    query = "illness(X), {}.".format(", ".join([f"symptom(X, {symp})" for symp in symptoms]))
+    query = "illness(X), {}.".format(", ".join([f"symptom(X, {symp.lower()})" for symp in symptoms]))
     query = list(prolog.query(query))
     if len(query) == 0:
         return ['Unknown illness']
     if len(query) == 1:
         return [query[0]['X']]
     return query
-
 
 
 ################################################################################################
