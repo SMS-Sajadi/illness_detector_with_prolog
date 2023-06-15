@@ -1,31 +1,32 @@
 from pyswip import Prolog
 import tkinter as tk
+import re
 
 ################################################################################################
 # STEP1: Define the knowledge base of illnesses and their symptoms
 
-# example
 prolog = Prolog()
-prolog.assertz("symptom(fever, high_temperature)")
-prolog.assertz("symptom(fever, chills)")
-prolog.assertz("symptom(cold, runny_nose)")
-prolog.assertz("symptom(cold, sore_throat)")
-prolog.assertz("symptom(cold, cough)")
-prolog.assertz("symptom(flu, body_aches)")
-prolog.assertz("symptom(flu, fatigue)")
-
-prolog.assertz("illness(fever)")
-prolog.assertz("illness(cold)")
-prolog.assertz("illness(flu)")
 
 # TODO: read illnesses descriptions from illnesses.txt and add them to the prolog knowledge base
+
+with open('illnesses.txt', 'r') as illness_file:
+    for line in illness_file:
+        data = re.split(' symptoms are |, and|, |\.', line)[:-1]
+        illness, symptoms = data[0], data[1:]
+
+        prolog.assertz(f"illness({illness})")
+        for symp in symptoms:
+            prolog.assertz(f"symptom({illness}, {symp})")
 
 ################################################################################################
 # STEP2: Define a function to diagnose illnesses based on symptoms
 
+
 def diagnose(symptoms):
-    #TODO: Define this function to diagnose illnesses based on symptoms
-    pass
+    # TODO: Define this function to diagnose illnesses based on symptoms
+
+    query = "illness(X), {}.".format(", ".join([f"symptom(X, {symp})" for symp in symptoms]))
+    illnesses = list(prolog.query(query))
 
 ################################################################################################
 # STEP3: Define a function to ask yes/no questions about the remaining symptoms to decide on the illness
@@ -50,6 +51,7 @@ def ask_question(illnesses):
 
     pass
 
+
 def on_question_answer(symptom, answer, illnesses):
     # TODO: Define a function to handle the answer to yes/no question and
     #       to diagnose illnesses based on user answers to yes/no questions
@@ -59,14 +61,16 @@ def on_question_answer(symptom, answer, illnesses):
 # The code is for GUI creation and functionality
 # You don't need to directly change it
 
-#"Next" button click event
+
+# "Next" button click event
 def on_next_click():
     symptom = symptom_entry.get()
     if symptom:
         symptoms.append(symptom)
         symptom_entry.delete(0, tk.END)
-    
-#"Finish" button click event
+
+
+# "Finish" button click event
 def on_finish_click():
     illnesses = diagnose(symptoms)
     if len(illnesses) == 1:
