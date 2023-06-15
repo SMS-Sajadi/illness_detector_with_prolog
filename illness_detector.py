@@ -11,12 +11,12 @@ prolog = Prolog()
 
 with open('illnesses.txt', 'r') as illness_file:
     for line in illness_file:
-        data = re.split(' symptoms are |, and|, |\.', line)[:-1]
-        illness, symptoms = data[0], data[1:]
+        data = re.split(' symptoms are |, and |, |\.', line)[:-1]
+        illness, symptoms = data[0].lower(), data[1:]
 
         prolog.assertz(f"illness({illness})")
         for symp in symptoms:
-            prolog.assertz(f"symptom({illness}, {symp})")
+            prolog.assertz(f"symptom({illness}, {symp.lower()})")
 
 ################################################################################################
 # STEP2: Define a function to diagnose illnesses based on symptoms
@@ -26,7 +26,14 @@ def diagnose(symptoms):
     # TODO: Define this function to diagnose illnesses based on symptoms
 
     query = "illness(X), {}.".format(", ".join([f"symptom(X, {symp})" for symp in symptoms]))
-    illnesses = list(prolog.query(query))
+    query = list(prolog.query(query))
+    if len(query) == 0:
+        return ['Unknown illness']
+    if len(query) == 1:
+        return [query[0]['X']]
+    return query
+
+
 
 ################################################################################################
 # STEP3: Define a function to ask yes/no questions about the remaining symptoms to decide on the illness
