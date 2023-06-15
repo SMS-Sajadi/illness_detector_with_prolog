@@ -44,33 +44,66 @@ def ask_question(illnesses, symptoms):
     
     # TODO: Define a function to diagnose illnesses based on user answers to yes/no questions
 
-    all_symptoms = set()
+    remaining_symptoms = set()
 
-    for illness in illnesses:
-        new_symptoms = list(prolog.query(f"findall(S, symptom({illness}, S), L)"))
-        for sym in new_symptoms[0]['L']:
-            all_symptoms.add(str(sym))
+    if len(illnesses) == 0:
+        illnesses = "Unknown illness"
+    elif len(illnesses) != 1:
+        for illness in illnesses:
+            new_symptoms = list(prolog.query(f"findall(S, (symptom({illness}, S), not(member(S, {symptoms}))), L)"))
+            for sym in new_symptoms[0]['L']:
+                remaining_symptoms.add(str(sym))
 
-    remaining_symptoms = list(all_symptoms.difference(symptoms))
+        remaining_symptoms = list(remaining_symptoms)
+
+    # if len(illnesses) == 0:
+    #     illnesses = "Unknown illness"
+    # elif len(illnesses) != 1:
+    #   for illness in illnesses:
+    #       new_symptoms = list(prolog.query(f"findall(S, symptom({illness}, S), L)"))
+    #       for sym in new_symptoms[0]['L']:
+    #           all_symptoms.add(str(sym))
+    #
+    #   remaining_symptoms = list(all_symptoms.difference(symptoms))
 
     # example of working with buttons
     if remaining_symptoms:
         question_symptom = remaining_symptoms.pop(0)
         question_label.config(text="Do you have {}?".format(question_symptom))
-        yes_button.config(command=lambda: on_question_answer(question_symptom, True, illnesses))
-        no_button.config(command=lambda: on_question_answer(question_symptom, False, illnesses))
+        yes_button.config(command=lambda: on_question_answer(question_symptom, True, illnesses, symptoms))
+        no_button.config(command=lambda: on_question_answer(question_symptom, False, illnesses, symptoms))
     else:
         with open("diagnosed_illness.txt", "w") as f:
             f.write(", ".join(illnesses))
         root.destroy()
 
-    pass
 
-
-def on_question_answer(symptom, answer, illnesses):
+def on_question_answer(symptom, answer, illnesses, symptoms):
     # TODO: Define a function to handle the answer to yes/no question and
     #       to diagnose illnesses based on user answers to yes/no questions
-    pass
+
+    if answer:
+        symptoms.append(symptom)
+        illnesses = diagnose(symptoms)
+        ask_question(illnesses, symptoms)
+    else:
+        illnesses = list(prolog.query("findall(X, symptom(X, {}), L), findall(Y, ({}), T), subtract(T, L, R)".format(
+            symptom, ", ".join([f"symptom(Y, {symp.lower()})" for symp in symptoms]))))
+        illnesses = [str(illness) for illness in illnesses[0]['R']]
+
+        # # ANOTHER WAY
+        # remove_illnesses = diagnose([symptom])
+        # for illness in remove_illnesses:
+        #     if illness in illnesses:
+        #         illnesses.remove(illness)
+        # # OR EVEN THIS WAY WE CAN SAY
+        # # ---------------------------------------------
+        # remove_illnesses = diagnose([symptom])
+        # illnesses = list(prolog.query(f"subtract({illnesses}, {remove_illnesses}, L)"))
+        # illnesses = [str(illness) for illness in illnesses[0]['L']]
+        # # ---------------------------------------------
+
+        ask_question(illnesses, symptoms)
 
 ################################################################################################
 # The code is for GUI creation and functionality
