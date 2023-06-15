@@ -31,29 +31,38 @@ def diagnose(symptoms):
         return ['Unknown illness']
     if len(query) == 1:
         return [query[0]['X']]
-    return query
+    return [i['X'] for i in query]
 
 
 ################################################################################################
 # STEP3: Define a function to ask yes/no questions about the remaining symptoms to decide on the illness
 
-def ask_question(illnesses):
+def ask_question(illnesses, symptoms):
     # Enabling YES and NO Button
     yes_button.config(state=tk.NORMAL)
     no_button.config(state=tk.NORMAL)
     
     # TODO: Define a function to diagnose illnesses based on user answers to yes/no questions
 
-    #example of working with buttons
-    # if remaining_symptoms:
-    #     question_symptom = remaining_symptoms.pop(0)
-    #     question_label.config(text="Do you have {}?".format(question_symptom))
-    #     yes_button.config(command=lambda: on_question_answer(question_symptom, True, illnesses))
-    #     no_button.config(command=lambda: on_question_answer(question_symptom, False, illnesses))
-    # else:
-    #     with open("diagnosed_illness.txt", "w") as f:
-    #         f.write(", ".join(illnesses))
-    #     root.destroy()
+    all_symptoms = set()
+
+    for illness in illnesses:
+        new_symptoms = list(prolog.query(f"findall(S, symptom({illness}, S), L)"))
+        for sym in new_symptoms[0]['L']:
+            all_symptoms.add(str(sym))
+
+    remaining_symptoms = list(all_symptoms.difference(symptoms))
+
+    # example of working with buttons
+    if remaining_symptoms:
+        question_symptom = remaining_symptoms.pop(0)
+        question_label.config(text="Do you have {}?".format(question_symptom))
+        yes_button.config(command=lambda: on_question_answer(question_symptom, True, illnesses))
+        no_button.config(command=lambda: on_question_answer(question_symptom, False, illnesses))
+    else:
+        with open("diagnosed_illness.txt", "w") as f:
+            f.write(", ".join(illnesses))
+        root.destroy()
 
     pass
 
@@ -84,7 +93,8 @@ def on_finish_click():
             f.write(illnesses[0])
         root.destroy()
     else:
-        ask_question(illnesses)
+        ask_question(illnesses, symptoms)
+
 
 # Create the GUI
 root = tk.Tk()
