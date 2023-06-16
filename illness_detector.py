@@ -25,8 +25,18 @@ with open('illnesses.txt', 'r') as illness_file:
 def diagnose(symptoms):
     # TODO: Define this function to diagnose illnesses based on symptoms
 
-    query = "illness(X), {}.".format(", ".join([f"symptom(X, {symp.lower()})" for symp in symptoms]))
-    query = list(prolog.query(query))
+    for i in range(len(symptoms)):
+        symptoms[i] = symptoms[i].lower()
+
+    query = list(prolog.query(f"illness(X), findall(S, symptom(X, S), L), intersection(L, {symptoms}, R),"
+                              f" length(R, N)"))
+
+    max_N = max([q['N'] for q in query])
+    query = [illness for illness in query if illness['N'] == max_N]
+
+    # query = "illness(X), {}.".format(", ".join([f"symptom(X, {symp.lower()})" for symp in symptoms]))
+    # query = list(prolog.query(query))
+
     if len(query) == 0:
         return ['Unknown illness']
     if len(query) == 1:
@@ -44,17 +54,16 @@ def ask_question(illnesses, symptoms):
     
     # TODO: Define a function to diagnose illnesses based on user answers to yes/no questions
 
-    remaining_symptoms = set()
+    remaining_symptoms = []
 
     if len(illnesses) == 0:
         illnesses = "Unknown illness"
     elif len(illnesses) != 1:
         for illness in illnesses:
-            new_symptoms = list(prolog.query(f"findall(S, (symptom({illness}, S), not(member(S, {symptoms}))), L)"))
+            new_symptoms = list(prolog.query(f"findall(S, (symptom({illness}, S), not(member(S, {symptoms})),"
+                                             f" not(member(S, {remaining_symptoms}))), L)"))
             for sym in new_symptoms[0]['L']:
-                remaining_symptoms.add(str(sym))
-
-        remaining_symptoms = list(remaining_symptoms)
+                remaining_symptoms.append(str(sym))
 
     # if len(illnesses) == 0:
     #     illnesses = "Unknown illness"
