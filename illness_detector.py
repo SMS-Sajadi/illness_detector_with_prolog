@@ -32,16 +32,18 @@ def diagnose(symptoms):
                               f" length(R, N)"))
 
     max_N = max([q['N'] for q in query])
-    query = [illness for illness in query if illness['N'] == max_N]
+    query = [illness['X'] for illness in query if illness['N'] == max_N and max_N != 0]
 
+    # # A SIMPLER WAY BUT NOT ACCURATE
     # query = "illness(X), {}.".format(", ".join([f"symptom(X, {symp.lower()})" for symp in symptoms]))
     # query = list(prolog.query(query))
+    # query = [illness['X'] for illness in query]
 
     if len(query) == 0:
         return ['Unknown illness']
     if len(query) == 1:
-        return [query[0]['X']]
-    return [i['X'] for i in query]
+        return [query[0]]
+    return query
 
 
 ################################################################################################
@@ -59,11 +61,10 @@ def ask_question(illnesses, symptoms):
     if len(illnesses) == 0:
         illnesses = "Unknown illness"
     elif len(illnesses) != 1:
-        for illness in illnesses:
-            new_symptoms = list(prolog.query(f"findall(S, (symptom({illness}, S), not(member(S, {symptoms})),"
-                                             f" not(member(S, {remaining_symptoms}))), L)"))
-            for sym in new_symptoms[0]['L']:
-                remaining_symptoms.append(str(sym))
+        new_symptoms = list(prolog.query(
+            f"findall(S, (member(X, {illnesses}), symptom(X, S), not(member(S, {symptoms}))), L), union(L, R, R)"))
+
+        remaining_symptoms = [str(sym) for sym in new_symptoms[0]['R']]
 
     # if len(illnesses) == 0:
     #     illnesses = "Unknown illness"
@@ -96,8 +97,8 @@ def on_question_answer(symptom, answer, illnesses, symptoms):
         illnesses = diagnose(symptoms)
         ask_question(illnesses, symptoms)
     else:
-        illnesses = list(prolog.query("findall(X, symptom(X, {}), L), findall(Y, ({}), T), subtract(T, L, R)".format(
-            symptom, ", ".join([f"symptom(Y, {symp.lower()})" for symp in symptoms]))))
+        illnesses = list(prolog.query(f"findall(X, symptom(X, {symptom}), L), subtract({illnesses}, L, R)"))
+
         illnesses = [str(illness) for illness in illnesses[0]['R']]
 
         # # ANOTHER WAY
